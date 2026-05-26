@@ -1,0 +1,253 @@
+
+<h2 class="sr-only">Gestor centralizado de listas de bloqueo para firewalls</h2>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.wrap { padding: 1.5rem 0; }
+.header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+.header-icon { width: 36px; height: 36px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--color-border-tertiary); }
+.title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+.subtitle { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px 14px; }
+.stat-num { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.stat-lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+.add-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.add-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+.row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.row input, .row select { font-size: 13px; height: 34px; padding: 0 10px; }
+.inp-entry { flex: 2; min-width: 160px; }
+.inp-type { flex: 0 0 90px; }
+.inp-label { flex: 1; min-width: 120px; }
+.btn-add { height: 34px; padding: 0 16px; font-size: 13px; white-space: nowrap; cursor: pointer; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); color: var(--color-text-primary); }
+.btn-add:hover { background: var(--color-background-tertiary); }
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 12px; cursor: pointer; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); color: var(--color-text-secondary); }
+.btn-sm:hover { color: var(--color-text-primary); border-color: var(--color-border-secondary); }
+.entry-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 1rem; }
+.entry { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+.entry-val { font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); flex: 1; word-break: break-all; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+.badge-ip { background: #E6F1FB; color: #0C447C; }
+.badge-fqdn { background: #E1F5EE; color: #085041; }
+.badge-cidr { background: #FAEEDA; color: #633806; }
+.lbl-pill { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-secondary); padding: 2px 7px; border-radius: 999px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-del { background: none; border: none; cursor: pointer; color: var(--color-text-secondary); font-size: 16px; padding: 2px; line-height: 1; }
+.btn-del:hover { color: #E24B4A; }
+.output-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+.output-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.output-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-primary); white-space: pre; overflow-x: auto; min-height: 60px; line-height: 1.7; border: 0.5px solid var(--color-border-tertiary); }
+.tip { font-size: 12px; color: var(--color-text-secondary); margin-top: 10px; line-height: 1.6; }
+.tip a { color: var(--color-text-info); cursor: pointer; text-decoration: underline; }
+.empty { text-align: center; padding: 24px; font-size: 13px; color: var(--color-text-secondary); }
+.filter-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.flt { height: 26px; padding: 0 10px; font-size: 12px; cursor: pointer; border-radius: 999px; border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); color: var(--color-text-secondary); }
+.flt.active { background: var(--color-background-secondary); color: var(--color-text-primary); border-color: var(--color-border-secondary); font-weight: 500; }
+.copied { color: #1D9E75; font-size: 12px; display: none; }
+.error-msg { font-size: 12px; color: #E24B4A; margin-top: 4px; display: none; }
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-icon"><i class="ti ti-shield-lock" style="font-size:18px;color:var(--color-text-secondary)" aria-hidden="true"></i></div>
+    <div>
+      <div class="title">Gestor de blocklist centralizado</div>
+      <div class="subtitle">Agrega IPs y FQDNs — expórtalos como lista para tus firewalls</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="cnt-total">0</div><div class="stat-lbl">Total entradas</div></div>
+    <div class="stat"><div class="stat-num" id="cnt-ip">0</div><div class="stat-lbl">IPs / CIDR</div></div>
+    <div class="stat"><div class="stat-num" id="cnt-fqdn">0</div><div class="stat-lbl">FQDNs</div></div>
+  </div>
+
+  <div class="add-card">
+    <div class="add-title">Agregar entrada</div>
+    <div class="row">
+      <input class="inp-entry" id="inp-val" placeholder="Ej: 192.168.1.1 | 10.0.0.0/24 | malware.com" />
+      <select class="inp-type" id="inp-type">
+        <option value="IP">IP</option>
+        <option value="CIDR">CIDR</option>
+        <option value="FQDN">FQDN</option>
+      </select>
+      <input class="inp-label" id="inp-label" placeholder="Etiqueta / cliente (opcional)" />
+      <button class="btn-add" onclick="addEntry()"><i class="ti ti-plus" aria-hidden="true"></i> Agregar</button>
+    </div>
+    <div class="error-msg" id="err-msg"></div>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">Entradas en blocklist</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span class="copied" id="copied-msg"><i class="ti ti-check" aria-hidden="true"></i> Copiado</span>
+      <button class="btn-sm" onclick="clearAll()"><i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i> Limpiar todo</button>
+    </div>
+  </div>
+
+  <div class="filter-row" id="filter-row">
+    <button class="flt active" onclick="setFilter('all',this)">Todos</button>
+    <button class="flt" onclick="setFilter('IP',this)">IP</button>
+    <button class="flt" onclick="setFilter('CIDR',this)">CIDR</button>
+    <button class="flt" onclick="setFilter('FQDN',this)">FQDN</button>
+  </div>
+
+  <div class="entry-list" id="entry-list"></div>
+
+  <div class="output-card">
+    <div class="output-head">
+      <div class="section-title"><i class="ti ti-file-text" style="font-size:14px;vertical-align:-2px;margin-right:6px" aria-hidden="true"></i>Salida para firewall (texto plano)</div>
+      <button class="btn-sm" onclick="copyOutput()"><i class="ti ti-copy" style="font-size:13px" aria-hidden="true"></i> Copiar</button>
+    </div>
+    <div class="output-box" id="output-box"># Sin entradas todavía</div>
+    <div class="tip">
+      <strong>Cómo usarlo:</strong> Pega esta lista en un archivo .txt y súbelo a GitHub, Google Drive, o cualquier servidor.<br>
+      Luego en tu firewall configura un <strong>External Dynamic List</strong> (Palo Alto) / <strong>External Block List</strong> (Fortinet) / <strong>Threat Feed</strong> (Check Point) apuntando a la URL del archivo. El FW lo descargará cada X minutos automáticamente en todos tus dispositivos. <a onclick="sendPrompt('¿Cómo configuro un External Dynamic List en Palo Alto? ¿Y en Fortinet?')">¿Cómo lo configuro en mi firewall? ↗</a>
+    </div>
+  </div>
+</div>
+
+<script>
+let entries = [];
+let filter = 'all';
+
+async function load() {
+  try {
+    const r = await window.storage.get('blocklist-entries');
+    if (r && r.value) entries = JSON.parse(r.value);
+  } catch(e) { entries = []; }
+  render();
+}
+
+async function save() {
+  try { await window.storage.set('blocklist-entries', JSON.stringify(entries)); } catch(e) {}
+}
+
+function validate(val, type) {
+  val = val.trim();
+  if (!val) return 'Ingresa un valor';
+  if (type === 'IP') {
+    const ipRx = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRx.test(val)) return 'IP inválida (ej: 192.168.1.1)';
+    const parts = val.split('.');
+    if (parts.some(p => parseInt(p) > 255)) return 'IP inválida (valores fuera de rango)';
+  }
+  if (type === 'CIDR') {
+    const cidrRx = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
+    if (!cidrRx.test(val)) return 'CIDR inválido (ej: 10.0.0.0/24)';
+    const [ip, mask] = val.split('/');
+    if (parseInt(mask) > 32) return 'Máscara CIDR inválida (0-32)';
+  }
+  if (type === 'FQDN') {
+    const fqdnRx = /^(\*\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+    if (!fqdnRx.test(val)) return 'FQDN inválido (ej: malware.com o *.bad.com)';
+  }
+  return null;
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err-msg');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function addEntry() {
+  const val = document.getElementById('inp-val').value.trim();
+  const type = document.getElementById('inp-type').value;
+  const label = document.getElementById('inp-label').value.trim();
+  const err = validate(val, type);
+  if (err) { showErr(err); return; }
+  showErr('');
+  const dup = entries.find(e => e.val === val);
+  if (dup) { showErr('Esta entrada ya existe en la lista'); return; }
+  entries.unshift({ id: Date.now(), val, type, label, added: new Date().toISOString().slice(0,10) });
+  document.getElementById('inp-val').value = '';
+  document.getElementById('inp-label').value = '';
+  save();
+  render();
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  save();
+  render();
+}
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.flt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function clearAll() {
+  if (entries.length === 0) return;
+  if (!confirm('¿Eliminar todas las entradas?')) return;
+  entries = [];
+  save();
+  render();
+}
+
+function copyOutput() {
+  const text = document.getElementById('output-box').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.getElementById('copied-msg');
+    el.style.display = 'inline';
+    setTimeout(() => el.style.display = 'none', 2000);
+  });
+}
+
+function badgeClass(type) {
+  if (type === 'IP') return 'badge-ip';
+  if (type === 'CIDR') return 'badge-cidr';
+  return 'badge-fqdn';
+}
+
+function render() {
+  const list = document.getElementById('entry-list');
+  const outBox = document.getElementById('output-box');
+  const visible = filter === 'all' ? entries : entries.filter(e => e.type === filter);
+  
+  document.getElementById('cnt-total').textContent = entries.length;
+  document.getElementById('cnt-ip').textContent = entries.filter(e => e.type === 'IP' || e.type === 'CIDR').length;
+  document.getElementById('cnt-fqdn').textContent = entries.filter(e => e.type === 'FQDN').length;
+
+  if (visible.length === 0) {
+    list.innerHTML = '<div class="empty"><i class="ti ti-shield-off" style="font-size:24px;display:block;margin-bottom:8px" aria-hidden="true"></i>' + (entries.length === 0 ? 'Sin entradas. Agrega una IP, CIDR o FQDN arriba.' : 'Sin entradas con este filtro.') + '</div>';
+  } else {
+    list.innerHTML = visible.map(e => `
+      <div class="entry">
+        <span class="badge ${badgeClass(e.type)}">${e.type}</span>
+        <span class="entry-val">${e.val}</span>
+        ${e.label ? `<span class="lbl-pill" title="${e.label}">${e.label}</span>` : ''}
+        <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">${e.added}</span>
+        <button class="btn-del" onclick="deleteEntry(${e.id})" aria-label="Eliminar entrada"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+    `).join('');
+  }
+
+  if (entries.length === 0) {
+    outBox.textContent = '# Sin entradas todavía';
+  } else {
+    const today = new Date().toISOString().slice(0,10);
+    let lines = [`# Blocklist generada: ${today}`, `# Total entradas: ${entries.length}`, ''];
+    const ips = entries.filter(e => e.type === 'IP' || e.type === 'CIDR');
+    const fqdns = entries.filter(e => e.type === 'FQDN');
+    if (ips.length) {
+      lines.push('# --- IPs y rangos CIDR ---');
+      ips.forEach(e => lines.push(e.label ? `${e.val}  # ${e.label}` : e.val));
+      lines.push('');
+    }
+    if (fqdns.length) {
+      lines.push('# --- FQDNs ---');
+      fqdns.forEach(e => lines.push(e.label ? `${e.val}  # ${e.label}` : e.val));
+    }
+    outBox.textContent = lines.join('\n');
+  }
+}
+
+document.getElementById('inp-val').addEventListener('keydown', e => { if (e.key === 'Enter') addEntry(); });
+load();
+</script>
